@@ -3,7 +3,29 @@ import { defineConfig, transformWithEsbuild } from 'vite';
 import react from '@vitejs/plugin-react';
 import legacy from '@vitejs/plugin-legacy';
 
-// Убираем "use-client" из @vkontakte/icons
+// 1. Наш плагин — вставит полифилл прямо после <div id="root"></div>
+function polyfillCreateShadowRoot() {
+  return {
+    name: 'polyfill-createShadowRoot',
+    enforce: 'pre',
+    transformIndexHtml(html) {
+      return html.replace(
+        /(<div id="root"><\/div>)/,
+        `$1
+  <!-- Polyfill для устаревшего createShadowRoot -->
+  <script>
+    if (!Element.prototype.createShadowRoot && Element.prototype.attachShadow) {
+      Element.prototype.createShadowRoot = function () {
+        return this.attachShadow({ mode: 'open' });
+      };
+    }
+  </script>`
+      );
+    }
+  };
+}
+
+// 2. Остальные твои плагины
 function handleModuleDirectivesPlugin() {
   return {
     name: 'handle-module-directives-plugin',
@@ -16,8 +38,7 @@ function handleModuleDirectivesPlugin() {
   };
 }
 
-// Обрабатываем .js-файлы как JSX
-function threatJsFilesAsJsx() {
+function treatJsFilesAsJsx() {
   return {
     name: 'treat-js-files-as-jsx',
     async transform(code, id) {
@@ -32,17 +53,14 @@ function threatJsFilesAsJsx() {
 
 export default defineConfig({
   base: './',
-
   plugins: [
+    polyfillCreateShadowRoot(),   // ← обязательно первым
     react(),
-    threatJsFilesAsJsx(),
+    treatJsFilesAsJsx(),
     handleModuleDirectivesPlugin(),
-    legacy({
-      targets: ['defaults', 'not IE 11'],
-    }),
+    legacy({ targets: ['defaults', 'not IE 11'] }),
   ],
 
-  // ← вот секция прокси для /analyze
   server: {
     proxy: {
       '/analyze': {
@@ -64,5 +82,3 @@ export default defineConfig({
     outDir: 'build',
   },
 });
-
-
