@@ -11,6 +11,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Polyfill for legacy createShadowRoot calls -->
+    <script>
+      if (!Element.prototype.createShadowRoot && Element.prototype.attachShadow) {
+        Element.prototype.createShadowRoot = function () {
+          return this.attachShadow({ mode: 'open' });
+        };
+      }
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
