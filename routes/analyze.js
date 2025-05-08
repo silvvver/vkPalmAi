@@ -1,12 +1,10 @@
 // routes/analyze.js
-
-const express = require('express');
-const multer  = require('multer');
-const fs      = require('fs');
-const path    = require('path');
+const express  = require('express');
+const multer   = require('multer');
+const fs       = require('fs');
+const path     = require('path');
 const { OpenAI } = require('openai');
 
-// Импортируем наши константы из config/prompts.js
 const {
   MODEL_ID,
   SYSTEM_BASE,
@@ -16,11 +14,15 @@ const {
 
 require('dotenv').config();
 
-const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const router  = express.Router();
+const upload  = multer({ dest: 'uploads/' });
+const openai  = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-router.post('/analyze', upload.single('handImage'), async (req, res) => {
+/**
+ * POST /analyze   (реальный путь, потому что
+ * в server.js есть  app.use('/analyze', analyzeRoute) )
+ */
+router.post('/', upload.single('handImage'), async (req, res) => {
   try {
     const style   = req.body.style || 'ted';
     const imgPath = req.file?.path;
@@ -32,7 +34,7 @@ router.post('/analyze', upload.single('handImage'), async (req, res) => {
     console.log('📸', imgPath);
     console.log('📦', img64.length);
 
-    // Строим prompts из конфига
+    /* ---------- Prompts ---------- */
     const systemPrompt = SYSTEM_BASE + '\n' + (STYLES[style] || '');
     const userPrompt   = USER_TEMPLATE;
 
@@ -45,8 +47,11 @@ router.post('/analyze', upload.single('handImage'), async (req, res) => {
           content: [
             { type: 'text', text: userPrompt },
             {
-              type: 'image_url',
-              image_url: { url: `data:image/jpeg;base64,${img64}`, detail: 'low' }
+              type : 'image_url',
+              image_url: {
+                url   : `data:image/jpeg;base64,${img64}`,
+                detail: 'low'
+              }
             }
           ]
         }
@@ -64,7 +69,7 @@ router.post('/analyze', upload.single('handImage'), async (req, res) => {
     console.error('❌', err.message);
     res.status(500).json({ error: 'Ошибка анализа изображения' });
   } finally {
-    // Удаляем временный файл
+    // удаляем tmp-файл
     if (req.file?.path) fs.rm(req.file.path, () => {});
   }
 });
