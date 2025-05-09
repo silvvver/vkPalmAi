@@ -1,6 +1,8 @@
 // myPalmApp/src/AppConfig.js
 import vkBridge, {
   parseURLSearchParamsForGetLaunchParams,
+} from '@vkontakte/vk-bridge';
+import {
   useAppearance,
   useAdaptivity,
   useInsets,
@@ -12,15 +14,12 @@ import { transformVKBridgeAdaptivity } from './utils/transformVKBridgeAdaptivity
 import App from './App';
 
 export const AppConfig = () => {
-  // получаем настройки внешнего вида и отступы от VK Bridge
   const vkBridgeAppearance = useAppearance() || undefined;
   const vkBridgeInsets = useInsets() || undefined;
-
-  // адаптивность (sizeX/sizeY) из VK Bridge
   const adaptivity = transformVKBridgeAdaptivity(useAdaptivity());
-
-  // платформа из launchParams (desktop_web → vkcom)
-  const { vk_platform } = parseURLSearchParamsForGetLaunchParams(window.location.search);
+  const { vk_platform } = parseURLSearchParamsForGetLaunchParams(
+    window.location.search
+  );
 
   return (
     <ConfigProvider
