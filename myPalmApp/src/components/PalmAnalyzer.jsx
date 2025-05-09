@@ -1,26 +1,16 @@
 // myPalmApp/src/components/PalmAnalyzer.jsx
--import React, { useState } from 'react';
--
--// вверху PalmAnalyzer.jsx
--const API_ROOT = import.meta.env.VITE_API_BASE || ''
-+import React, { useState } from 'react';
+import React, { useState } from 'react';
 
 export default function PalmAnalyzer() {
-  const [file, setFile]     = useState(null);
-  const [style, setStyle]   = useState('ted');
-  const [result, setResult] = useState('');
+  const [file, setFile]       = useState(null);
+  const [style, setStyle]     = useState('ted');
+  const [result, setResult]   = useState('');
   const [loading, setLoading] = useState(false);
 
--  // Если сборка production -- берём адрес из .env.production,
--  // иначе оставляем пустую строку (локальный proxy `/analyze`)
--  const API_ROOT =
--    import.meta.env.PROD
--      ? 'https://vk-palm-ai-backend.onrender.com'      // PROD-бэк
--      : '';
-+  // В prod берём из .env.production (VITE_API_BASE), в dev — пустую строку для proxy из vite.config.js
-+  const API_ROOT = import.meta.env.PROD
-+    ? import.meta.env.VITE_API_BASE
-+    : '';
+  // В prod подставляем VITE_API_ROOT, в dev оставляем пустую строку для прокси
+  const API_ROOT = import.meta.env.PROD
+    ? import.meta.env.VITE_API_ROOT
+    : '';
 
   const analyze = async (e) => {
     e.preventDefault();
@@ -38,4 +28,22 @@ export default function PalmAnalyzer() {
         method: 'POST',
         body: formData
       });
-      // ...
+      const json = await res.json();
+      setResult(
+        json.error
+          ? '❌ ' + json.error
+          : json.result || '⚠️ Пустой ответ от сервера'
+      );
+    } catch (err) {
+      setResult('❌ ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
+      {/* остальной JSX без изменений */}
+    </div>
+  );
+}
