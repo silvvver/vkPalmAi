@@ -7,33 +7,25 @@ export default function PalmAnalyzer() {
   const [result, setResult]   = useState('');
   const [loading, setLoading] = useState(false);
 
-  // В prod подставляем VITE_API_ROOT, в dev оставляем пустую строку для прокси
   const API_ROOT = import.meta.env.PROD
     ? import.meta.env.VITE_API_ROOT
     : '';
 
-  const analyze = async (e) => {
+  const analyze = async e => {
     e.preventDefault();
     if (!file) return;
-
     setLoading(true);
     setResult('');
-
     const formData = new FormData();
     formData.append('handImage', file);
     formData.append('style', style);
-
     try {
       const res  = await fetch(`${API_ROOT}/analyze`, {
         method: 'POST',
         body: formData
       });
       const json = await res.json();
-      setResult(
-        json.error
-          ? '❌ ' + json.error
-          : json.result || '⚠️ Пустой ответ от сервера'
-      );
+      setResult(json.error ? '❌ ' + json.error : json.result || '⚠️ Пустой ответ');
     } catch (err) {
       setResult('❌ ' + err.message);
     } finally {
@@ -43,7 +35,53 @@ export default function PalmAnalyzer() {
 
   return (
     <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
-      {/* остальной JSX без изменений */}
+      <h2>🔮 Онлайн-хиромант</h2>
+
+      <form onSubmit={analyze}>
+        <input
+          type="file"
+          accept="image/*"
+          required
+          onChange={e => setFile(e.target.files[0] || null)}
+        />
+
+        <div style={{ margin: '12px 0' }}>
+          {[
+            { id: 'ted', label: 'Тэдус' },
+            { id: 'professor', label: 'Профессор' },
+            { id: 'buzova', label: 'Бузова' }
+          ].map(opt => (
+            <label key={opt.id} style={{ marginRight: 14 }}>
+              <input
+                type="radio"
+                name="style"
+                value={opt.id}
+                checked={style === opt.id}
+                onChange={() => setStyle(opt.id)}
+              />{' '}
+              {opt.label}
+            </label>
+          ))}
+        </div>
+
+        <button type="submit" disabled={loading}>
+          {loading ? '⏳ Анализируем…' : '📤 Отправить'}
+        </button>
+      </form>
+
+      {result && (
+        <pre
+          style={{
+            whiteSpace: 'pre-wrap',
+            background: '#fafafa',
+            padding: 15,
+            marginTop: 22,
+            border: '1px solid #ddd'
+          }}
+        >
+          {result}
+        </pre>
+      )}
     </div>
   );
 }
