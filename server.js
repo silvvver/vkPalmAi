@@ -1,38 +1,34 @@
-// server.js  ─ единый сервис «фронт + API»
+// server.js  – единый сервис «фронт + API»
 require('dotenv').config();
-
 const path    = require('path');
 const express = require('express');
 const cors    = require('cors');
 
-const analyzeRoute = require('./routes/analyze');   // ваш файл с логикой /analyze
+const analyzeRoute = require('./routes/analyze');
 
 const app = express();
 
-/* ── глобальные middlewares ─────────────────────────────── */
-app.use(cors({ origin: '*' }));     // при желании замените '*' на точные домены
+/* ─ global middlewares ─ */
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-/* ── REST-API ───────────────────────────────────────────── */
-app.use('/analyze', analyzeRoute);              // POST /analyze
-app.use('/uploads', express.static('uploads')); // скачивание загруженных файлов
+/* ─ API ─ */
+app.use('/analyze', analyzeRoute);
+app.use('/uploads', express.static('uploads'));
 
-/* ── фронтенд (сборка Vite/React) ───────────────────────── */
-const frontDir = path.join(__dirname, 'frontend'); // в эту папку кладёте build
+/* ─ FRONTEND ─ */
+const frontDir = path.join(__dirname, 'frontend');   // 💡 ← сюда вы уже скопировали build
 app.use(express.static(frontDir, {
-  /* снимаем X-Frame-Options, чтобы iframe ВК не ругался */
-  setHeaders(res) {
-    res.removeHeader('X-Frame-Options');
+  // главное – убрать заголовок, мешающий iframe
+  setHeaders(res/*, path */) {
+    res.removeHeader('X-Frame-Options');          // kill SAMEORIGIN
+    res.setHeader('X-Frame-Options', 'ALLOWALL'); // или конкретнее CSP
   }
 }));
 
-/* fallback для SPA: любые GET → index.html */
-app.get('*', (_, res) =>
-  res.sendFile(path.join(frontDir, 'index.html'))
-);
+// fallback для SPA
+app.get('*', (_, res) => res.sendFile(path.join(frontDir, 'index.html')));
 
-/* ── запуск ─────────────────────────────────────────────── */
+/* ─ RUN ─ */
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🔮 API хироманта слушает порт ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🔮 API слушает ${PORT}`));
