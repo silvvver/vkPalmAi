@@ -1,27 +1,33 @@
-// server.js – «голый» API без лишнего статика
+// server.js — единый сервис «фронт + API»
 require('dotenv').config();
 
-const express       = require('express');
-const cors          = require('cors');
-const analyzeRoute  = require('./routes/analyze');
+const express      = require('express');
+const cors         = require('cors');
+const path         = require('path');
+const analyzeRoute = require('./routes/analyze');
 
 const app = express();
 
 /* ── глобальные middlewares ─────────────────────────────── */
-app.use(cors({ origin: '*' }));      // если нужно – сузьте список доменов
+app.use(cors({ origin: '*' })); // при желании укажите точные домены
 app.use(express.json());
 
-/* (опц.) – чтобы можно было скачать исходное фото по ссылке */
-app.use('/uploads', express.static('uploads'));
+/* ── API ────────────────────────────────────────────────── */
+app.use('/analyze', analyzeRoute);          // POST /analyze
+app.use('/uploads', express.static('uploads')); // выдаём загруженные файлы
 
-/* ── основной энд-поинт ─────────────────────────────────── */
-app.use('/analyze', analyzeRoute);   // POST /analyze
+/* ── фронтенд (сборка Vite/React) ───────────────────────── */
+const staticDir = path.join(__dirname, 'frontend');
+app.use(express.static(staticDir));         // /assets/… и index.html
 
-/* ── 404 для всего остального ───────────────────────────── */
-app.all('*', (_req, res) => res.status(404).json({ error: 'Not found' }));
+// fallback: всё, что не API и не /uploads, отдаём index.html
+app.get('*', (_req, res) =>
+  res.sendFile(path.join(staticDir, 'index.html'))
+);
 
 /* ── запуск ─────────────────────────────────────────────── */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () =>
   console.log(`🔮 API хироманта слушает порт ${PORT}`)
 );
+
